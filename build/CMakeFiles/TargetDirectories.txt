@@ -1,9 +1,0 @@
-/workspaces/mik32_project/build/CMakeFiles/edit_cache.dir
-/workspaces/mik32_project/build/CMakeFiles/rebuild_cache.dir
-/workspaces/mik32_project/build/hardware/CMakeFiles/mik32_shared.dir
-/workspaces/mik32_project/build/hardware/CMakeFiles/mik32_hal.dir
-/workspaces/mik32_project/build/hardware/CMakeFiles/edit_cache.dir
-/workspaces/mik32_project/build/hardware/CMakeFiles/rebuild_cache.dir
-/workspaces/mik32_project/build/app/CMakeFiles/base_project.dir
-/workspaces/mik32_project/build/app/CMakeFiles/edit_cache.dir
-/workspaces/mik32_project/build/app/CMakeFiles/rebuild_cache.dir
