@@ -2,6 +2,7 @@
 #include "mik32_hal_spi.h"
 #include "mik32_hal_ssd1306.h"
 #include "mik32_hal_ssd1306_fonts.h"
+#include "servo.h"
 
 static void SystemClock_Config();
 static void USART_Init();
@@ -11,6 +12,7 @@ static void Scr_Init();
 USART_HandleTypeDef husart0;
 SPI_HandleTypeDef spi;
 HAL_SSD1306_HandleTypeDef scr;
+Servo_HandleTypeDef servo;
 
 int main()
 {
@@ -19,65 +21,18 @@ int main()
     SPI_Init();
     Scr_Init();
     
+    servo.timer = TIMER32_1;
+    servo.chanel = TIMER32_CHANNEL_0;
+    Servo_Init(&servo);
+    HAL_DelayMs(1000);
+    Servo_Write(&servo, 90);
+    HAL_DelayMs(1000);
+    Servo_Write(&servo, 180);
+    HAL_DelayMs(1000);
+    Servo_Write(&servo, 0);
+    HAL_DelayMs(1000);
+
     while (1) {
-        ssd1306_Fill(&scr, White);
-        ssd1306_UpdateScreen(&scr);
-        HAL_DelayMs(1000);
-
-        ssd1306_Fill(&scr, Black);
-        ssd1306_UpdateScreen(&scr);
-        HAL_DelayMs(1000);
-
-        // for (int i = 0; i < 128; i++)
-        // {
-        //     for (int j = 0; j < 64; j++)
-        //     {
-        //         ssd1306_DrawPixel(&scr, i, j, White);
-        //         // HAL_DelayMs(10);
-        //         ssd1306_UpdateScreen(&scr);
-        //     }
-        // }
-
-        // HAL_DelayMs(1000);
-
-        // ssd1306_Fill(&scr, Black);
-        // ssd1306_UpdateScreen(&scr);
-
-        ssd1306_DrawCircle(&scr, 30, 30, 10, White);
-        ssd1306_UpdateScreen(&scr);
-        HAL_DelayMs(1000);
-
-        ssd1306_Fill(&scr, Black);
-        ssd1306_UpdateScreen(&scr);
-
-        ssd1306_DrawArc(&scr, 30, 30, 10, 90, 300, White);
-        ssd1306_UpdateScreen(&scr);
-        HAL_DelayMs(1000);
-
-        ssd1306_Fill(&scr, Black);
-        ssd1306_UpdateScreen(&scr);
-
-        ssd1306_DrawRectangle(&scr, 30, 30, 50, 60, White);
-        ssd1306_UpdateScreen(&scr);
-        HAL_DelayMs(1000);
-
-        ssd1306_Fill(&scr, Black);
-        ssd1306_UpdateScreen(&scr);
-
-        ssd1306_Line(&scr, 30, 30, 50, 55, White);
-        ssd1306_UpdateScreen(&scr);
-        HAL_DelayMs(1000);
-
-        ssd1306_Fill(&scr, Black);
-        ssd1306_UpdateScreen(&scr);
-
-        ssd1306_SetCursor(&scr, 0, 0);
-        ssd1306_WriteString(&scr, "Hello, World!", Font_6x8, White);
-        ssd1306_UpdateScreen(&scr);
-        HAL_DelayMs(1000);
-
-        ssd1306_Fill(&scr, Black);
-        ssd1306_UpdateScreen(&scr);
     }
 }
 
