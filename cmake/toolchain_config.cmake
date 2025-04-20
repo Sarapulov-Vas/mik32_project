@@ -47,8 +47,8 @@ set(CMAKE_ASM_FLAGS_INIT ${ASM_FLAGS})
 # Set linker flags
 string(CONCAT LINK_FLAGS
     " -Wl,-Map,base_project.map"
-    " -Teeprom.ld"
-    # " -Tspifi.ld"
+    # " -Teeprom.ld"
+    " -Tspifi.ld"
     " -Xlinker --gc-sections"
     " -nostartfiles"
 )

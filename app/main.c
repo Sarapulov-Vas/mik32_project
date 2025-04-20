@@ -1,8 +1,11 @@
+#include <stdio.h>
 #include "mik32_hal_usart.h"
 #include "mik32_hal_spi.h"
 #include "mik32_hal_ssd1306.h"
 #include "mik32_hal_ssd1306_fonts.h"
 #include "servo.h"
+#include "HC-SR04.h"
+#include "xprintf.h"
 
 static void SystemClock_Config();
 static void USART_Init();
@@ -13,6 +16,7 @@ USART_HandleTypeDef husart0;
 SPI_HandleTypeDef spi;
 HAL_SSD1306_HandleTypeDef scr;
 Servo_HandleTypeDef servo;
+HC_SR04_TypeDef HC_SR04;
 
 int main()
 {
@@ -20,19 +24,26 @@ int main()
     USART_Init();
     SPI_Init();
     Scr_Init();
-    
     servo.timer = TIMER32_1;
     servo.chanel = TIMER32_CHANNEL_0;
     Servo_Init(&servo);
-    HAL_DelayMs(1000);
-    Servo_Write(&servo, 90);
-    HAL_DelayMs(1000);
-    Servo_Write(&servo, 180);
-    HAL_DelayMs(1000);
-    Servo_Write(&servo, 0);
-    HAL_DelayMs(1000);
+
+    HC_SR04.Trig_Port = GPIO_0;
+    HC_SR04.Trig_Pin = GPIO_PIN_8;
+    HC_SR04.Echo_Port = GPIO_0;
+    HC_SR04.Echo_Pin = GPIO_PIN_1;
+    HC_SR04_Init(&HC_SR04);
+    char str[5];
 
     while (1) {
+        // xprintf("%d\n", HC_SR04_ping_cm(&HC_SR04));
+        sprintf(str, "%ld", HC_SR04_ping_cm(&HC_SR04));
+        ssd1306_SetCursor(&scr, 0, 0);
+        ssd1306_WriteString(&scr, str, Font_6x8, White);
+        ssd1306_UpdateScreen(&scr);
+        HAL_DelayMs(500);
+        ssd1306_Fill(&scr, Black);
+        ssd1306_UpdateScreen(&scr);
     }
 }
 
@@ -100,7 +111,7 @@ void USART_Init()
 
 void SPI_Init() {
     spi.Instance = SPI_1;
-    //  /* Режим SPI */
+    /* Режим SPI */
     spi.Init.SPI_Mode = HAL_SPI_MODE_MASTER;
 
     /* Настройки */
