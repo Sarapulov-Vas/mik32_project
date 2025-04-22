@@ -12,9 +12,9 @@ typedef struct {
     HAL_PinsTypeDef Echo_Pin;
     GPIO_TypeDef *Trig_Port;
     HAL_PinsTypeDef Trig_Pin;
-} HC_SR04_TypeDef;
+} HC_SR04_HandleTypeDef;
 
-void HC_SR04_Init(HC_SR04_TypeDef *HC_SR04);
-uint32_t HC_SR04_ping_cm(HC_SR04_TypeDef *HC_SR04);
+void HC_SR04_Init(HC_SR04_HandleTypeDef *HC_SR04);
+uint32_t HC_SR04_ping_cm(HC_SR04_HandleTypeDef *HC_SR04);
 
 #endif
