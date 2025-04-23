@@ -27,6 +27,7 @@ void HC_SR04_Init(HC_SR04_HandleTypeDef *HC_SR04)
 
 static uint32_t pulseIn(HC_SR04_HandleTypeDef *HC_SR04)
 {
+    __HAL_SCR1_TIMER_SET_TIME(0);
     uint32_t start = __HAL_SCR1_TIMER_GET_TIME();
     while(HAL_GPIO_ReadPin(HC_SR04->Echo_Port, HC_SR04->Echo_Pin) == GPIO_PIN_HIGH &&
         (__HAL_SCR1_TIMER_GET_TIME() - start) < DEFAULT_TIMEOUT) {}
