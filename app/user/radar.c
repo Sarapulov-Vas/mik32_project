@@ -159,6 +159,7 @@ static void SPI_Init(SPI_HandleTypeDef *spi)
     /* Настройки для ведущего */
     spi->Init.BaudRateDiv = SPI_BAUDRATE_DIV8;
     spi->Init.Decoder = SPI_DECODER_NONE;
+    spi->Init.ManualCS = SPI_MANUALCS_ON;
     HAL_SPI_Init(spi);
 }
 
