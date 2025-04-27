@@ -1,7 +1,5 @@
 #include "radar.h"
 
-static Radar_HandleTypeDef radar = {0};
-
 int main()
 {
     radar.servo.timer = TIMER32_1;
@@ -25,7 +23,10 @@ int main()
 
     radar.potentiometr_chanel = 0;
 
-    Init_Radar(&radar);
-    Scan(&radar);
-    // Manual_Mode(&radar);
+    radar.Button_Pin = GPIO_PIN_2;
+    radar.Button_Port = GPIO_0;
+    radar.Button_Mux_Line = GPIO_MUX_PORT0_2_LINE_2;
+    radar.Button_Line = GPIO_LINE_2;
+    
+    Init_And_Run();
 }
