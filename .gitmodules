@@ -3,4 +3,4 @@
 	url = https://github.com/Sarapulov-Vas/mik32-hal.git
 [submodule "hardware/mik32v2-shared"]
 	path = hardware/mik32v2-shared
-	url = https://github.com/MikronMIK32/mik32v2-shared.git
+	url = https://github.com/MikronMIK32/mik32v2-shared
