@@ -14,6 +14,7 @@ foreach(USER_DIR_ITEM ${USER_DIR_ITEMS})
 endforeach()
 
 add_executable(${APP_NAME}
+    crt.S
     main.c
     ${USER_SOURCES}
 )
