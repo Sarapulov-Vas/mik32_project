@@ -2,12 +2,14 @@
 #include "mik32_hal_ssd1306_fonts.h"
 #include "utilities.h"
 
-static void Apply_Min_Angle_Setting(Setting_HandleTypeDef *settings, HAL_SSD1306_HandleTypeDef *scr);
-static void Apply_Max_Angle_Setting(Setting_HandleTypeDef *settings, HAL_SSD1306_HandleTypeDef *scr);
-static void Apply_Brightness_Setting(Setting_HandleTypeDef *settings, HAL_SSD1306_HandleTypeDef *scr);
+static void Apply_Min_Angle_Setting(Setting_HandleTypeDef *settings,
+                                    HAL_SSD1306_HandleTypeDef *scr);
+static void Apply_Max_Angle_Setting(Setting_HandleTypeDef *settings,
+                                    HAL_SSD1306_HandleTypeDef *scr);
+static void Apply_Brightness_Setting(Setting_HandleTypeDef *settings,
+                                     HAL_SSD1306_HandleTypeDef *scr);
 
-void Init_Default_Setting(Setting_HandleTypeDef *settings)
-{
+void Init_Default_Setting(Setting_HandleTypeDef *settings) {
     settings[Distance].Name = "Distance cm";
     settings[Distance].Value = DEFAULT_DISTANCE;
     settings[Distance].Min_Value = MIN_DISTANCE;
@@ -45,14 +47,12 @@ void Init_Default_Setting(Setting_HandleTypeDef *settings)
     settings[Brightness].Apply_Setting = Apply_Brightness_Setting;
 }
 
-void Display_Settings(HAL_SSD1306_HandleTypeDef *scr, Setting_HandleTypeDef *settings)
-{
+void Display_Settings(HAL_SSD1306_HandleTypeDef *scr, Setting_HandleTypeDef *settings) {
     ssd1306_Fill(scr, Black);
     ssd1306_SetCursor(scr, 6 * 6, 0);
     ssd1306_WriteString(scr, "Settings", Font_6x8, White);
     char str[5];
-    for (uint8_t i = 0; i < NUMBER_OF_SETTINGS; i++)
-    {
+    for (uint8_t i = 0; i < NUMBER_OF_SETTINGS; i++) {
         ssd1306_SetCursor(scr, 0, 9 + i * 9);
         ssd1306_WriteString(scr, settings[i].Name, Font_6x8, White);
         ssd1306_SetCursor(scr, SSD1306_WIDTH - 3 * 6, 9 + i * 9);
@@ -62,8 +62,7 @@ void Display_Settings(HAL_SSD1306_HandleTypeDef *scr, Setting_HandleTypeDef *set
     ssd1306_UpdateScreen(scr);
 }
 
-void Seclect_Setting(HAL_SSD1306_HandleTypeDef *scr, Setting_HandleTypeDef *settings, int num)
-{
+void Seclect_Setting(HAL_SSD1306_HandleTypeDef *scr, Setting_HandleTypeDef *settings, int num) {
     char str[4];
     ssd1306_FillRectangle(scr, 0, 8 + 9 * num, SSD1306_WIDTH, 7 + 9 * (num + 1), White);
     ssd1306_SetCursor(scr, 0, 9 + 9 * num);
@@ -73,8 +72,7 @@ void Seclect_Setting(HAL_SSD1306_HandleTypeDef *scr, Setting_HandleTypeDef *sett
     ssd1306_WriteString(scr, str, Font_6x8, Black);
 }
 
-void Deseclect_Setting(HAL_SSD1306_HandleTypeDef *scr, Setting_HandleTypeDef *settings, int num)
-{
+void Deseclect_Setting(HAL_SSD1306_HandleTypeDef *scr, Setting_HandleTypeDef *settings, int num) {
     char str[4];
     ssd1306_FillRectangle(scr, 0, 8 + 9 * num, SSD1306_WIDTH, 7 + 9 * (num + 1), Black);
     ssd1306_SetCursor(scr, 0, 9 + 9 * num);
@@ -84,39 +82,36 @@ void Deseclect_Setting(HAL_SSD1306_HandleTypeDef *scr, Setting_HandleTypeDef *se
     ssd1306_WriteString(scr, str, Font_6x8, White);
 }
 
-void Change_Setting(HAL_SSD1306_HandleTypeDef *scr, Setting_HandleTypeDef *settings, ADC_HandleTypeDef *hadc,
-    uint32_t potentiometr_chanel, int num)
-{
+void Change_Setting(HAL_SSD1306_HandleTypeDef *scr, Setting_HandleTypeDef *settings,
+                    ADC_HandleTypeDef *hadc, uint32_t potentiometr_chanel, int num) {
     char str[4];
     uint32_t value = Read_Potentiometr(hadc, potentiometr_chanel);
     settings[num].Value = POT_TO_VALUE(value, settings[num].Min_Value, settings[num].Max_Value, 1);
     int_to_str(str, settings[num].Value);
-    ssd1306_FillRectangle(scr, SSD1306_WIDTH - 3 * 6, 8 + 9 * num,
-        SSD1306_WIDTH, 7 + 9 * (num + 1), White);
+    ssd1306_FillRectangle(scr, SSD1306_WIDTH - 3 * 6, 8 + 9 * num, SSD1306_WIDTH, 7 + 9 * (num + 1),
+                          White);
     ssd1306_SetCursor(scr, SSD1306_WIDTH - 3 * 6, 9 + num * 9);
     ssd1306_WriteString(scr, str, Font_6x8, Black);
     ssd1306_UpdateScreen(scr);
 }
 
-void Apply_Setting(Setting_HandleTypeDef *settings, HAL_SSD1306_HandleTypeDef *scr, uint8_t num)
-{
-    if (settings[num].Apply_Setting != NULL)
-    {
+void Apply_Setting(Setting_HandleTypeDef *settings, HAL_SSD1306_HandleTypeDef *scr, uint8_t num) {
+    if (settings[num].Apply_Setting != NULL) {
         settings[num].Apply_Setting(settings, scr);
     }
 }
 
-static void Apply_Min_Angle_Setting(Setting_HandleTypeDef *settings, HAL_SSD1306_HandleTypeDef *scr)
-{
+static void Apply_Min_Angle_Setting(Setting_HandleTypeDef *settings,
+                                    HAL_SSD1306_HandleTypeDef *scr) {
     settings[Max_Angle].Min_Value = settings[Min_Angle].Value;
 }
 
-static void Apply_Max_Angle_Setting(Setting_HandleTypeDef *settings, HAL_SSD1306_HandleTypeDef *scr)
-{
+static void Apply_Max_Angle_Setting(Setting_HandleTypeDef *settings,
+                                    HAL_SSD1306_HandleTypeDef *scr) {
     settings[Min_Angle].Max_Value = settings[Max_Angle].Value;
 }
 
-static void Apply_Brightness_Setting(Setting_HandleTypeDef *settings, HAL_SSD1306_HandleTypeDef *scr)
-{
+static void Apply_Brightness_Setting(Setting_HandleTypeDef *settings,
+                                     HAL_SSD1306_HandleTypeDef *scr) {
     ssd1306_SetContrast(scr, settings[Brightness].Value);
 }

@@ -1,11 +1,10 @@
-#include "mik32_hal_timer32.h"
 #include "servo.h"
+#include "mik32_hal_timer32.h"
 
 static void Timer32_Init(Servo_HandleTypeDef *servo);
 static void GPIO_Init();
 
-void Servo_Init(Servo_HandleTypeDef *servo)
-{
+void Servo_Init(Servo_HandleTypeDef *servo) {
     GPIO_Init();
     Timer32_Init(servo);
     HAL_Timer32_Channel_Enable(&servo->htimer_channel);
@@ -14,8 +13,7 @@ void Servo_Init(Servo_HandleTypeDef *servo)
     HAL_Timer32_Start(&servo->htim);
 }
 
-void Servo_Write(Servo_HandleTypeDef *servo, uint32_t angle)
-{
+void Servo_Write(Servo_HandleTypeDef *servo, uint32_t angle) {
     angle = (angle > 180) ? 180 : angle;
     uint32_t pulse_us = SERVO_MIN_PULSE + (angle * (SERVO_MAX_PULSE - SERVO_MIN_PULSE)) / 180;
     uint32_t ocr_value = pulse_us * 32;
@@ -24,8 +22,7 @@ void Servo_Write(Servo_HandleTypeDef *servo, uint32_t angle)
     HAL_DelayMs(10);
 }
 
-static void Timer32_Init(Servo_HandleTypeDef *servo)
-{
+static void Timer32_Init(Servo_HandleTypeDef *servo) {
     servo->htim.Instance = servo->timer;
     servo->htim.Top = PWM_PERIOD_TICKS;
     servo->htim.State = TIMER32_STATE_DISABLE;
@@ -45,10 +42,8 @@ static void Timer32_Init(Servo_HandleTypeDef *servo)
     HAL_Timer32_Channel_Init(&servo->htimer_channel);
 }
 
-static void GPIO_Init()
-{
+static void GPIO_Init() {
     __HAL_PCC_GPIO_0_CLK_ENABLE();
     __HAL_PCC_GPIO_1_CLK_ENABLE();
     __HAL_PCC_GPIO_2_CLK_ENABLE();
 }
-
