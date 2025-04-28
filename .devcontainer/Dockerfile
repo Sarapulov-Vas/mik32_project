@@ -1,8 +1,9 @@
 FROM ubuntu:24.04
 
+ARG PYTHON_VENV_PATH=/python/venv
+
 # Install the necessary packages
-RUN apt update
-RUN apt install -y --no-install-recommends \
+RUN apt update && apt install -y --no-install-recommends \
     wget \
     ca-certificates \
     git \
@@ -10,12 +11,27 @@ RUN apt install -y --no-install-recommends \
     cmake \
     ninja-build \
     python3 \
+    python3-pip \
+    python3-venv\
     openocd \
     picocom \
     zsh \
+    gcc \
+    libc6-dev \
+    rubygems \
     && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p ${PYTHON_VENV_PATH} && \
+    python3 -m venv ${PYTHON_VENV_PATH}
+ENV PATH=${PYTHON_VENV_PATH}/bin:$PATH
+RUN pip install --upgrade pip setuptools wheel
+
+RUN pip install \
+    elf-size-analyze==0.2.2
+
+RUN gem install ceedling
 
 ENV GIT_SSL_NO_VERIFY=true
 

@@ -1,0 +1,25 @@
+name: Run tests
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: hihidrdi/mik32:latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Ceedling
+      run: |
+        apt-get update && apt-get install -y ruby gcc
+        gem install ceedling
+    - name: Build
+      run: |
+        ./ci/build.sh
+    - name: Run tests
+      run: |
+        ./ci/run_tests.sh

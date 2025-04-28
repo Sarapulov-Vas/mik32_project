@@ -1,13 +1,13 @@
 #ifndef __RADAR
 #define __RADAR
 
-#include <math.h>
+#include "HC-SR04.h"
+#include "mik32_hal_adc.h"
 #include "mik32_hal_spi.h"
 #include "mik32_hal_ssd1306.h"
-#include "mik32_hal_adc.h"
 #include "servo.h"
-#include "HC-SR04.h"
 #include "settings.h"
+#include <math.h>
 
 #define DEBOUNCE_DELAY_MS 100
 
@@ -22,15 +22,9 @@
 
 #define NUMBER_OF_MODES 2
 
-typedef enum
-{
-    Scan = 0,
-    Manual = 1,
-    Settings
-} Modes;
+typedef enum { Scan = 0, Manual = 1, Settings } Modes;
 
-typedef struct
-{
+typedef struct {
     SPI_HandleTypeDef spi;
     HAL_SSD1306_HandleTypeDef scr;
     Servo_HandleTypeDef servo;

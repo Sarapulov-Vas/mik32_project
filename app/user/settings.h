@@ -1,9 +1,9 @@
 #ifndef __SETTINGS
 #define __SETTINGS
 
-#include <inttypes.h>
-#include "mik32_hal_ssd1306.h"
 #include "mik32_hal_adc.h"
+#include "mik32_hal_ssd1306.h"
+#include <inttypes.h>
 
 #define NUMBER_OF_SETTINGS 6
 
@@ -27,10 +27,9 @@
 
 typedef struct __Setting Setting_HandleTypeDef;
 
-typedef void (*ApplySettingFunc)(Setting_HandleTypeDef*, HAL_SSD1306_HandleTypeDef*);
+typedef void (*ApplySettingFunc)(Setting_HandleTypeDef *, HAL_SSD1306_HandleTypeDef *);
 
-struct __Setting
-{
+struct __Setting {
     char *Name;
     uint8_t Value;
     uint8_t Max_Value;
@@ -38,8 +37,7 @@ struct __Setting
     ApplySettingFunc Apply_Setting;
 };
 
-enum
-{
+enum {
     Distance = 0,
     Step = 1,
     Min_Angle = 2,
@@ -52,8 +50,8 @@ void Init_Default_Setting(Setting_HandleTypeDef *settings);
 void Display_Settings(HAL_SSD1306_HandleTypeDef *scr, Setting_HandleTypeDef *settings);
 void Seclect_Setting(HAL_SSD1306_HandleTypeDef *scr, Setting_HandleTypeDef *settings, int num);
 void Deseclect_Setting(HAL_SSD1306_HandleTypeDef *scr, Setting_HandleTypeDef *settings, int num);
-void Change_Setting(HAL_SSD1306_HandleTypeDef *scr, Setting_HandleTypeDef *settings, ADC_HandleTypeDef *hadc,
-    uint32_t potentiometr_chanel, int num);
+void Change_Setting(HAL_SSD1306_HandleTypeDef *scr, Setting_HandleTypeDef *settings,
+                    ADC_HandleTypeDef *hadc, uint32_t potentiometr_chanel, int num);
 void Apply_Setting(Setting_HandleTypeDef *settings, HAL_SSD1306_HandleTypeDef *scr, uint8_t num);
 
 #endif
