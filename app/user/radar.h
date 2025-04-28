@@ -7,25 +7,27 @@
 #include "mik32_hal_adc.h"
 #include "servo.h"
 #include "HC-SR04.h"
+#include "settings.h"
 
 #define DEBOUNCE_DELAY_MS 100
 
 #define SYSTEM_FREQ_HZ 32000000UL
 
-
 #define SYSTEM_FREQ_KHZ 32000
+
+#define HOLD_DELAY_MS 1000
 
 #define RADAR_CENTER 63
 #define RADAR_DISTANCE 61
-#define MAX_DISTANCE 50
-#define STEP 2
-#define RADAR_VIEWING_ANGLE 60
 
-#define MIN_POTENCIOMETR_VALUE 200
-#define MAX_POTENCIOMETR_VALUE 4000
+#define NUMBER_OF_MODES 2
 
-#define DEG_TO_RAD(angle) ((angle) * M_PI / 180.0)
-#define SCALE(dist) ((dist) * RADAR_DISTANCE / MAX_DISTANCE)
+typedef enum
+{
+    Scan = 0,
+    Manual = 1,
+    Settings
+} Modes;
 
 typedef struct
 {
@@ -39,11 +41,15 @@ typedef struct
     HAL_PinsTypeDef Button_Pin;
     HAL_GPIO_Line_Config Button_Mux_Line;
     HAL_GPIO_Line Button_Line;
-    HAL_SSD1306_Vertex radar_map[180 / STEP + 1];
+    HAL_SSD1306_Vertex radar_map[180];
     int16_t angle;
     uint8_t direction;
-    uint8_t mode;
+    Modes mode;
     uint64_t last_button_press_time;
+    uint64_t button_press_time;
+    Setting_HandleTypeDef settings[NUMBER_OF_SETTINGS];
+    uint8_t setting_number;
+    uint8_t change_setting;
 } Radar_HandleTypeDef;
 
 extern Radar_HandleTypeDef radar;

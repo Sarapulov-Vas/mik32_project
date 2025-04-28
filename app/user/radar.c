@@ -1,32 +1,33 @@
 #include "radar.h"
 #include <stdlib.h>
-#include <stdio.h>
 #include "mik32_hal_ssd1306_fonts.h"
 #include "mik32_hal.h"
 #include "mik32_hal_gpio.h"
 #include "mik32_hal_irq.h"
 #include "mik32_hal_scr1_timer.h"
+#include "utilities.h"
 
 Radar_HandleTypeDef radar = {0};
 
 static void SystemClock_Config();
 static void SPI_Init(SPI_HandleTypeDef *spi);
-static void int_to_str(char *str, uint8_t n);
 static void Drow_Radius_line(uint8_t angle, uint8_t radius, HAL_SSD1306_Color color);
 static uint8_t Measure_Distance_And_Display();
-static uint32_t Read_Potentiometr();
+static uint8_t Scale(uint16_t distance);
 static void ADC_Init();
 static void GPIO_Init();
-static void Scan();
+static void Scan_Mode();
 static void Manual_Mode();
+static void Settings_Mode();
 static void handle_button_click();
 
 void Init_And_Run()
 {
     HAL_Init();
     SystemClock_Config();
+    Init_Default_Setting(radar.settings);
     SPI_Init(&radar.spi);
-    ssd1306_Init(&radar.scr, BRIGHTNESS_FULL);
+    ssd1306_Init(&radar.scr, radar.settings[Brightness].Value);
     Servo_Init(&radar.servo);
     HC_SR04_Init(&radar.HC_SR04);
     ADC_Init();
@@ -40,13 +41,24 @@ void Init_And_Run()
     HAL_IRQ_EnableInterrupts();
     while (1)
     {
+        ssd1306_Fill(&radar.scr, Black);
         switch (radar.mode)
         {
-        case 0:
-            Scan();
+        case Scan:
+            ssd1306_DrawCircle(&radar.scr, RADAR_CENTER, RADAR_CENTER, RADAR_CENTER, White);
+            ssd1306_SetCursor(&radar.scr, SSD1306_WIDTH - 4 * 6, 0);
+            ssd1306_WriteString(&radar.scr, "Scan", Font_6x8, White);
+            Scan_Mode();
             break;
-        case 1:
+        case Manual:
+            ssd1306_DrawCircle(&radar.scr, RADAR_CENTER, RADAR_CENTER, RADAR_CENTER, White);
+            ssd1306_SetCursor(&radar.scr, SSD1306_WIDTH - 6 * 6, 0);
+            ssd1306_WriteString(&radar.scr, "Manual", Font_6x8, White);
             Manual_Mode();
+            break;
+        case Settings:
+            Display_Settings(&radar.scr, radar.settings);
+            Settings_Mode();
             break;
         default:
             break;
@@ -54,65 +66,107 @@ void Init_And_Run()
     }
 }
 
-static void Scan()
+static void Scan_Mode()
 {
-    if (radar.angle > 180) radar.angle = 180;
-    if (radar.angle < 0) radar.angle = 0;
-
-    if ((radar.angle == 180 && radar.direction == 0) || (radar.angle == 0 && radar.direction == 1))
+    while (radar.mode == Scan)
     {
-        radar.direction = (radar.direction + 1) % 2;
+        if (radar.angle > radar.settings[Max_Angle].Value) radar.angle = radar.settings[Max_Angle].Value;
+        if (radar.angle < radar.settings[Min_Angle].Value) radar.angle = radar.settings[Min_Angle].Value;
+
+        if ((radar.angle == radar.settings[Max_Angle].Value && radar.direction == 0) ||
+            (radar.angle == radar.settings[Min_Angle].Value && radar.direction == 1))
+        {
+            radar.direction = (radar.direction + 1) % 2;
+        }
+
+        int16_t ang = radar.direction == 0 ? radar.angle - radar.settings[Radar_Viewing_Angle].Value :
+            radar.angle + radar.settings[Radar_Viewing_Angle].Value;
+        if (ang >= radar.settings[Min_Angle].Value && ang <= radar.settings[Max_Angle].Value)
+        {
+            ssd1306_DrawPixel(&radar.scr, radar.radar_map[ang / radar.settings[Step].Value].x,
+                radar.radar_map[ang / radar.settings[Step].Value].y, Black);
+        }
+
+        ssd1306_DrawPixel(&radar.scr, radar.radar_map[radar.angle / radar.settings[Step].Value].x,
+            radar.radar_map[radar.angle / radar.settings[Step].Value].y, Black);
+
+        if (Measure_Distance_And_Display() < radar.settings[Distance].Value)
+        {
+            ssd1306_DrawPixel(&radar.scr, radar.radar_map[radar.angle / radar.settings[Step].Value].x,
+                radar.radar_map[radar.angle / radar.settings[Step].Value].y, White);
+        }
+
+        radar.angle = radar.direction == 0 ? radar.angle + radar.settings[Step].Value :
+            radar.angle - radar.settings[Step].Value;
     }
-
-    uint8_t ang = radar.direction == 0 ? radar.angle - 60 : radar.angle + 60;
-    if (ang >= 0 && ang <= 180)
-    {
-        ssd1306_DrawPixel(&radar.scr, radar.radar_map[ang / STEP].x, radar.radar_map[ang / STEP].y, Black);
-    }
-
-    ssd1306_DrawPixel(&radar.scr, radar.radar_map[radar.angle / STEP].x,
-        radar.radar_map[radar.angle / STEP].y, Black);
-
-    if (Measure_Distance_And_Display() < MAX_DISTANCE && radar.mode == 0)
-    {
-        ssd1306_DrawPixel(&radar.scr, radar.radar_map[radar.angle / STEP].x,
-            radar.radar_map[radar.angle / STEP].y, White);
-    }
-
-    radar.angle = radar.direction == 0 ? radar.angle + STEP : radar.angle - STEP;
 }
 
 static void Manual_Mode()
 {
-    uint32_t value = Read_Potentiometr(radar);
-    radar.angle = value < MIN_POTENCIOMETR_VALUE ? 0 : value > MAX_POTENCIOMETR_VALUE ? 180 :
-        ((value - MIN_POTENCIOMETR_VALUE) * 180 / (MAX_POTENCIOMETR_VALUE - MIN_POTENCIOMETR_VALUE)) / STEP * STEP;
+    while (radar.mode == Manual)
+    {
+        uint32_t value = Read_Potentiometr(&radar.hadc, radar.potentiometr_chanel);
+        radar.angle = POT_TO_VALUE(value, radar.settings[Min_Angle].Value,
+            radar.settings[Max_Angle].Value, radar.settings[Step].Value);
         Measure_Distance_And_Display();
+    }
+}
+
+static void Settings_Mode()
+{
+    uint8_t previous_n = NUMBER_OF_SETTINGS;
+    while (radar.mode == Settings)
+    {
+        if (radar.change_setting)
+        {
+            Change_Setting(&radar.scr, radar.settings, &radar.hadc, radar.potentiometr_chanel,
+                radar.setting_number);
+        }
+        else
+        {
+            uint32_t value = Read_Potentiometr(&radar.hadc, radar.potentiometr_chanel);
+            radar.setting_number = POT_TO_VALUE(value, 0, NUMBER_OF_SETTINGS - 1, 1);
+
+            if (radar.setting_number != previous_n)
+            {
+                Deseclect_Setting(&radar.scr, radar.settings, previous_n);
+                Seclect_Setting(&radar.scr, radar.settings, radar.setting_number);
+                previous_n = radar.setting_number;
+                ssd1306_UpdateScreen(&radar.scr);
+            }
+        }
+    }
 }
 
 static uint8_t Measure_Distance_And_Display()
 {
-    // Servo_Write(&radar.servo, radar.angle);
+    Servo_Write(&radar.servo, radar.angle);
     char str[3];
     uint16_t dist = HC_SR04_ping_cm(&radar.HC_SR04);
-    dist = dist > MAX_DISTANCE ? MAX_DISTANCE : dist;
+    dist = dist > radar.settings[Distance].Value ? radar.settings[Distance].Value : dist;
 
     int_to_str(str, dist);
     ssd1306_FillRectangle(&radar.scr, 0, 0, 18, 8, Black);
 
     ssd1306_SetCursor(&radar.scr, 0, 0);
+    HAL_EPIC_MaskLevelClear(HAL_EPIC_GPIO_IRQ_MASK);
     ssd1306_WriteString(&radar.scr, str, Font_6x8, White);
 
-    Drow_Radius_line(radar.angle, SCALE(dist), White);
+    Drow_Radius_line(radar.angle, Scale(dist), White);
 
-    HAL_EPIC_MaskLevelClear(HAL_EPIC_GPIO_IRQ_MASK);
     ssd1306_UpdateScreen(&radar.scr);
     HAL_EPIC_MaskLevelSet(HAL_EPIC_GPIO_IRQ_MASK);
 
     ssd1306_Line(&radar.scr, RADAR_CENTER, RADAR_CENTER,
-        radar.radar_map[radar.angle / STEP].x, radar.radar_map[radar.angle / STEP].y, Black);
+        radar.radar_map[radar.angle / radar.settings[Step].Value].x,
+        radar.radar_map[radar.angle / radar.settings[Step].Value].y, Black);
 
     return dist;
+}
+
+static uint8_t Scale(uint16_t distance)
+{
+    return distance * RADAR_DISTANCE / radar.settings[Distance].Value;
 }
 
 static void Drow_Radius_line(uint8_t angle, uint8_t radius, HAL_SSD1306_Color color)
@@ -121,34 +175,9 @@ static void Drow_Radius_line(uint8_t angle, uint8_t radius, HAL_SSD1306_Color co
         RADAR_CENTER - floor(cos(DEG_TO_RAD(angle)) * radius):
         RADAR_CENTER + floor(cos(DEG_TO_RAD(180 - angle)) * radius);
     uint8_t y = RADAR_CENTER - floor(sin(DEG_TO_RAD(angle)) * radius);
-    radar.radar_map[angle / STEP].x = x;
-    radar.radar_map[angle / STEP].y = y;
+    radar.radar_map[angle / radar.settings[Step].Value].x = x;
+    radar.radar_map[angle / radar.settings[Step].Value].y = y;
     ssd1306_Line(&radar.scr, RADAR_CENTER, RADAR_CENTER, x, y, color);
-}
-
-static uint32_t Read_Potentiometr()
-{
-    HAL_ADC_SINGLE_AND_SET_CH(radar.hadc.Instance, radar.potentiometr_chanel);
-    return HAL_ADC_WaitAndGetValue(&radar.hadc);
-}
-
-static void int_to_str(char *str, uint8_t n)
-{
-    char buffer[5];
-    int i = 0;
-
-    do {
-        buffer[i++] = '0' + (n % 10);
-        n /= 10;
-    } while (n > 0);
-
-    int len = i;
-    for (int i = 0; i < len; i++)
-    {
-	    str[i] = buffer[len - 1 - i];
-    }
-
-    str[len] = '\0';
 }
 
 static void SystemClock_Config()
@@ -207,29 +236,42 @@ static void GPIO_Init()
     GPIO_InitStruct.Pull = HAL_GPIO_PULL_DOWN;
     HAL_GPIO_Init(radar.Button_Port, &GPIO_InitStruct);
 
-    HAL_GPIO_InitInterruptLine(radar.Button_Line, GPIO_INT_MODE_RISING);
+    HAL_GPIO_InitInterruptLine(radar.Button_Line, GPIO_INT_MODE_CHANGE);
 }
 
 static void handle_button_click()
 {
     uint64_t current_time = __HAL_SCR1_TIMER_GET_TIME();
 
-    if ((current_time - radar.last_button_press_time) / SYSTEM_FREQ_KHZ < DEBOUNCE_DELAY_MS)
+    if ((current_time - radar.last_button_press_time) < DEBOUNCE_DELAY_MS * SYSTEM_FREQ_KHZ)
     {
         return;
     }
 
     radar.last_button_press_time = current_time;
-    radar.mode = (radar.mode + 1) % 2;
-    ssd1306_Fill(&radar.scr, Black);
-    if (radar.mode == 0) {
-        ssd1306_DrawCircle(&radar.scr, RADAR_CENTER, RADAR_CENTER, RADAR_CENTER, White);
-        ssd1306_SetCursor(&radar.scr, SSD1306_WIDTH - 4 * 6, 0);
-        ssd1306_WriteString(&radar.scr, "Scan", Font_6x8, White);
-    } else {
-        ssd1306_DrawCircle(&radar.scr, RADAR_CENTER, RADAR_CENTER, RADAR_CENTER, White);
-        ssd1306_SetCursor(&radar.scr, SSD1306_WIDTH - 6 * 6, 0);
-        ssd1306_WriteString(&radar.scr, "Manual", Font_6x8, White);
+
+    if (HAL_GPIO_ReadPin(radar.Button_Port, radar.Button_Pin) == GPIO_PIN_HIGH)
+    {
+        radar.button_press_time = current_time;
+    }
+    else
+    {
+        if (__HAL_SCR1_TIMER_GET_TIME() - radar.button_press_time > HOLD_DELAY_MS * SYSTEM_FREQ_KHZ)
+        {
+            radar.mode = radar.mode != Settings ? Settings : Scan;
+        }
+        else if (radar.mode != Settings)
+        {
+            radar.mode = (radar.mode + 1) % NUMBER_OF_MODES;
+        }
+        else
+        {
+            radar.change_setting = !radar.change_setting;
+            if (!radar.change_setting)
+            {
+                Apply_Setting(radar.settings, &radar.scr, radar.setting_number);
+            }
+        }
     }
 }
 
