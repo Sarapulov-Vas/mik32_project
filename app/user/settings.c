@@ -62,7 +62,7 @@ void Display_Settings(HAL_SSD1306_HandleTypeDef *scr, Setting_HandleTypeDef *set
     ssd1306_UpdateScreen(scr);
 }
 
-void Seclect_Setting(HAL_SSD1306_HandleTypeDef *scr, Setting_HandleTypeDef *settings, int num) {
+void Select_Setting(HAL_SSD1306_HandleTypeDef *scr, Setting_HandleTypeDef *settings, int num) {
     char str[4];
     ssd1306_FillRectangle(scr, 0, 8 + 9 * num, SSD1306_WIDTH, 7 + 9 * (num + 1), White);
     ssd1306_SetCursor(scr, 0, 9 + 9 * num);
@@ -72,7 +72,7 @@ void Seclect_Setting(HAL_SSD1306_HandleTypeDef *scr, Setting_HandleTypeDef *sett
     ssd1306_WriteString(scr, str, Font_6x8, Black);
 }
 
-void Deseclect_Setting(HAL_SSD1306_HandleTypeDef *scr, Setting_HandleTypeDef *settings, int num) {
+void Deselect_Setting(HAL_SSD1306_HandleTypeDef *scr, Setting_HandleTypeDef *settings, int num) {
     char str[4];
     ssd1306_FillRectangle(scr, 0, 8 + 9 * num, SSD1306_WIDTH, 7 + 9 * (num + 1), Black);
     ssd1306_SetCursor(scr, 0, 9 + 9 * num);
