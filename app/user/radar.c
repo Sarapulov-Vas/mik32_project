@@ -117,8 +117,8 @@ static void Settings_Mode() {
             radar.setting_number = POT_TO_VALUE(value, 0, NUMBER_OF_SETTINGS - 1, 1);
 
             if (radar.setting_number != previous_n) {
-                Deseclect_Setting(&radar.scr, radar.settings, previous_n);
-                Seclect_Setting(&radar.scr, radar.settings, radar.setting_number);
+                Deselect_Setting(&radar.scr, radar.settings, previous_n);
+                Select_Setting(&radar.scr, radar.settings, radar.setting_number);
                 previous_n = radar.setting_number;
                 ssd1306_UpdateScreen(&radar.scr);
             }
