@@ -97,7 +97,7 @@
 # see documentation for the many options for specifying this.
 :paths:
   :test:
-    - +:radar_tests**
+    - +:radar_tests/tests**
   :source:
     - app/**
     - hardware/**
